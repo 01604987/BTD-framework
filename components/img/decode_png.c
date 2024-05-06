@@ -2,7 +2,7 @@
 #include <inttypes.h>
 #include "decode_png.h"
 #include "pngle.h"
-//#include "esp_log.h"
+#include "esp_log.h"
 
 void png_init(pngle_t *pngle, uint32_t w, uint32_t h)
 {

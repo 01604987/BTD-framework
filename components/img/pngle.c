@@ -34,7 +34,7 @@
 #else
 #include "rom/miniz.h"
 #endif
-//#include "esp_log.h"
+#include "esp_log.h"
 #include "pngle.h"
 
 #define PNGLE_ERROR(s) (pngle->error = (s), pngle->state = PNGLE_STATE_ERROR, -1)
