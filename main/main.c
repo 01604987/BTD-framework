@@ -11,100 +11,23 @@
 #include "esp_spiffs.h"
 #include "driver/gpio.h"
 
-#include "axp192.h"
+
 #include "sgm2578.h"
-#include "st7789.h"
-#include "fontx.h"
 #include "bmpfile.h"
 #include "decode_jpeg.h"
 #include "decode_png.h"
 #include "pngle.h"
 #include <math.h>
 #include "imu.h"
+#include "tft.h"
 
 
 #define INTERVAL 400
 #define WAIT vTaskDelay(INTERVAL)
 
-// M5stickC-Plus stuff
-#if CONFIG_M5STICK_C_PLUS
-#define CONFIG_WIDTH 135
-#define CONFIG_HEIGHT 240
-#define CONFIG_MOSI_GPIO 15
-#define CONFIG_SCLK_GPIO 13
-#define CONFIG_CS_GPIO 5 
-#define CONFIG_DC_GPIO 23
-#define CONFIG_RESET_GPIO 18
-#define CONFIG_BL_GPIO -1
-#define CONFIG_LED_GPIO 10
-#define CONFIG_OFFSETX 52
-#define CONFIG_OFFSETY 40
-#endif
-
-// M5stickC-Plus2 stuff
-#if CONFIG_M5STICK_C_PLUS2
-#define CONFIG_WIDTH 135
-#define CONFIG_HEIGHT 240
-#define CONFIG_MOSI_GPIO 15
-#define CONFIG_SCLK_GPIO 13
-#define CONFIG_CS_GPIO 5 
-#define CONFIG_DC_GPIO 14
-#define CONFIG_RESET_GPIO 12
-#define CONFIG_BL_GPIO -1
-#define CONFIG_LED_GPIO 19
-#define CONFIG_OFFSETX 52
-#define CONFIG_OFFSETY 40
-#endif
-
 
 
 static const char *TAG = "MAIN";
-
-FontxFile fx16G[2];
-FontxFile fx24G[2];
-FontxFile fx32G[2];
-TFT_t dev;
-
-
-void init_tft(){
-	AXP192_PowerOn();
-	AXP192_ScreenBreath(11);
-	// set font file
-
-	InitFontx(fx16G,"/fonts/ILGH16XB.FNT",""); // 8x16Dot Gothic
-	InitFontx(fx24G,"/fonts/ILGH24XB.FNT",""); // 12x24Dot Gothic
-	InitFontx(fx32G,"/fonts/ILGH32XB.FNT",""); // 16x32Dot Gothic
-	
-	spi_master_init(&dev, CONFIG_MOSI_GPIO, CONFIG_SCLK_GPIO, CONFIG_CS_GPIO, CONFIG_DC_GPIO, CONFIG_RESET_GPIO, CONFIG_BL_GPIO);
-	lcdInit(&dev, CONFIG_WIDTH, CONFIG_HEIGHT, CONFIG_OFFSETX, CONFIG_OFFSETY);
-}
-
-
-void clear_screen(){
-	lcdFillScreen(&dev, BLACK);
-}
-
-void draw_steps(int count){
-	char charBuffer[6];
-	itoa(count, charBuffer, 10); // base 
-	uint16_t color;
-	color = WHITE;
-	lcdSetFontDirection(&dev, 1);
-	uint16_t xpos = CONFIG_WIDTH - CONFIG_WIDTH / 4;
-	uint16_t ypos = CONFIG_HEIGHT / 5;
-	lcdDrawString(&dev, fx24G, xpos, ypos, (uint8_t*)charBuffer, color);
-}
-
-void draw_text(char* text){
-	uint8_t ascii[40];
-	uint16_t color;
-	color = WHITE;
-	lcdSetFontDirection(&dev, 1);
-	uint16_t xpos = CONFIG_WIDTH / 3;
-	uint16_t ypos = CONFIG_HEIGHT / 4;
-	strcpy((char *)ascii, text);
-	lcdDrawString(&dev, fx32G, xpos, ypos, ascii, color);
-}
 
 
 esp_err_t mountSPIFFS(char * partition_label, char * mount_point) {
@@ -202,8 +125,6 @@ int count_steps(float mag_array[], int size, float threshold) {
     return step_count;
 }
 
-
-
 float apply_filter(float prev_output, float curr_input, float prev_input, float* a, float* b){
 	float output = a[0] * prev_output + b[0] * curr_input + b[1] * prev_input;
 	return output;
@@ -219,8 +140,7 @@ void app_main(void)
 	printDirectory("/images");
 
 	// Initialize i2c
-	i2c_master_init();
-
+	init_i2c();
 	init_mpu6886();
 	init_tft();
 
