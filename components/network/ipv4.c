@@ -8,7 +8,7 @@ static const char *TAG = "Network";
 
 
 
-char rx_buffer[128];
+char rx_buffer[64];
 char host_ip[] = HOST_IP_ADDR;
 int addr_family = 0;
 int ip_protocol = 0;

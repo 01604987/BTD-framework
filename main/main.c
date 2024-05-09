@@ -14,10 +14,10 @@
 
 
 #include "sgm2578.h"
-#include "bmpfile.h"
-#include "decode_jpeg.h"
-#include "decode_png.h"
-#include "pngle.h"
+//#include "bmpfile.h" 
+//#include "decode_jpeg.h"
+//#include "decode_png.h"
+//#include "pngle.h"
 #include <math.h>
 #include "imu.h"
 #include "tft.h"
@@ -26,12 +26,16 @@
 #include "protocol_examples_common.h"
 #include "esp_event.h"
 #include "nvs_flash.h"
-
+#include "preproc.h"
+#include "postproc.h"
+#include "proc_utils.h"
 
 #define INTERVAL 400
 #define WAIT vTaskDelay(INTERVAL)
 
-
+#define WINDOW 50
+#define ORDER_1 2
+#define ORDER_2 3
 
 static const char *TAG = "MAIN";
 int end = 0;
@@ -164,6 +168,38 @@ void app_main(void)
 	TimerHandle_t end_timer;
 	end_timer = xTimerCreate("EndTimer", pdMS_TO_TICKS(20000), pdFALSE, NULL, end_callback);
 
+	// init_preproc();
+	// while (1) {
+	// 	init_network();
+	// 	if (connect_to_sock() != 1){
+	// 		break;
+	// 	};
+
+	// 	// col = 3 because of xyz
+	// 	float *input_buf = init_1d_buffer(3);
+	// 	// 1D because of magnitude. WINDOW = size of array
+	// 	float *output_buf = init_1d_buffer(WINDOW);
+
+	// 	int output_index = 0;
+
+	// 	char* walking = "WALKING";
+	// 	char* idle = "IDLE";
+	// 	while(1) {
+
+	// 		vTaskDelay(10 / portTICK_PERIOD_MS);
+	// 		getAccelData(&input_buf[0], &input_buf[1], &input_buf[2]);
+
+	// 		output_buf[output_index] = preproc_magnitude(input_buf, output_buf, output_index, ORDER_1);
+
+
+			
+	// 		// flip between index 0 and 1 because order_1 filter
+	// 		output_index += 1;
+	// 	}
+
+	// }
+
+
 	while (1) {
 		init_network();
 		if (connect_to_sock() != 1){
@@ -209,7 +245,7 @@ void app_main(void)
 		while (1) {
 
 			// TODO use timer instead of sleep, frequency will change due to accumulated processing time + sleep
-			if (mag_output_counter >= interval){
+			if (mag_output_counter >= WINDOW){
 				interval_steps = count_steps(mag_output, interval, threshold);
 				if (interval_steps > 0){
 					step_counter += interval_steps;
