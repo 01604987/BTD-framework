@@ -4,8 +4,9 @@
 #include <inttypes.h>
 
 // #include "freertos/FreeRTOS.h" //
-// #include "freertos/task.h" //
+//#include "freertos/task.h" //
 // #include "esp_err.h" //
+//#include "freertos/timers.h"
 #include "esp_log.h"
 #include "esp_vfs.h"
 #include "esp_spiffs.h"
@@ -33,6 +34,7 @@
 
 
 static const char *TAG = "MAIN";
+int end = 0;
 
 
 esp_err_t mountSPIFFS(char * partition_label, char * mount_point) {
@@ -135,6 +137,11 @@ float apply_filter(float prev_output, float curr_input, float prev_input, float*
 	return output;
 }
 
+void end_callback(TimerHandle_t xTimer) {
+    printf("Timer reached, sending end cmd");
+	end = 1;
+}
+
 void app_main(void)
 {
 	// Mount SPIFFS File System on FLASH
@@ -154,6 +161,8 @@ void app_main(void)
 	ESP_ERROR_CHECK(esp_event_loop_create_default());
     ESP_ERROR_CHECK(example_connect());
 
+	TimerHandle_t end_timer;
+	end_timer = xTimerCreate("EndTimer", pdMS_TO_TICKS(20000), pdFALSE, NULL, end_callback);
 
 	while (1) {
 		init_network();
@@ -190,11 +199,16 @@ void app_main(void)
 
 		char* walking = "WALKING";
 		char* idle = "IDLE";
-		int end = 0;
+		
 		extern int conn_err;
+
+		if (xTimerStart(end_timer, 0) != pdPASS) {
+        // Timer start failed
+        // Handle the error
+        }
 		while (1) {
 
-
+			// TODO use timer instead of sleep, frequency will change due to accumulated processing time + sleep
 			if (mag_output_counter >= interval){
 				interval_steps = count_steps(mag_output, interval, threshold);
 				if (interval_steps > 0){
@@ -252,10 +266,9 @@ void app_main(void)
 					send_buf(message, sizeof(message)-1);
 
 					const char *response = recv_buf();
-					printf(response);
 					if (strcmp(response, "Bye!")) {
 						break;
-					}
+					}	
 
 				} else {
 					send_buf(accBuf, sizeof(accBuf));

@@ -3,9 +3,12 @@
 
 *.old
 
-.vscode
 
+# My added ignores
+.vscode
 build
+sdkconfig
+
 
 # Object files
 *.o
@@ -56,4 +59,4 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
-sdkconfig
+
