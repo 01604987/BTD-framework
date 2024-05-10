@@ -10,10 +10,6 @@ static const float STEP_COEFF_A[] = {0.8277396};
 static const float STEP_COEFF_B[] = {0.0861302, 0.0861302};
 
 
-float running_sum;
-float mean;
-int mean_counter;
-float prev_magnitude_input;
 
 
 float preproc_magnitude(float *input, float *outputs, int index, int order);

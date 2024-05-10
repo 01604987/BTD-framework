@@ -1,4 +1,5 @@
 #include "proc_utils.h"
+#include "esp_log.h"
 
 static const char *TAG = "PROC_UTILS";
 

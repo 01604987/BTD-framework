@@ -2,6 +2,10 @@
 #include "esp_log.h"
 #include <math.h>
 
+float running_sum;
+float mean;
+int mean_counter;
+float prev_magnitude_input;
 
 
 float magnitude(float x, float y, float z) {

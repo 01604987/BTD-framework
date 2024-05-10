@@ -1,4 +1,4 @@
-set(srcs "preproc.c" "postproc.c" "proc_utils.h"
+set(srcs "preproc.c" "postproc.c" "proc_utils.c"
 	)
 
 
