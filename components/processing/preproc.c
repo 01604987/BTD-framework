@@ -5,7 +5,7 @@
 float running_sum = 0.0f;
 float mean = 0.0f;
 int mean_counter = 1;
-float mag = 0;
+float curr_input = 0.0f;
 
 float magnitude(float x, float y, float z) {
     return sqrt(x*x + y*y + z*z);
@@ -18,13 +18,13 @@ float apply_filter(float prev_output, float curr_input, float prev_input, float 
 
 float preproc_magnitude(float *input, float *outputs, int index, int order){
     // magnitude
-    float prev_input = mag;
-    mag = magnitude(input[0], input[1], input[2]);
+    float prev_input = curr_input;
+    float mag = magnitude(input[0], input[1], input[2]);
     float curr_output;
-    float curr_input;
+    // keep track of running sum
     running_sum += mag;
     // calculate running mean for normalization
-    mean = (running_sum) / mean_counter;
+    mean = running_sum / mean_counter;
 
     curr_input = mag - mean;
 
@@ -52,6 +52,6 @@ void reset_preproc() {
     running_sum = 0.0f;
     mean = 0.0f;
     mean_counter = 1;
-    mag = 0;
+    curr_input = 0;
 }
 

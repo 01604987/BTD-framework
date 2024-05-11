@@ -192,8 +192,8 @@ void app_main(void)
 		extern uint8_t conn_err;
 
 		if (xTimerStart(end_timer, 0) != pdPASS) {
-        // Timer start failed
-        // Handle the error
+		// Error handling here.	
+        ESP_LOGE(TAG,"Timer Start failure");
         }
 
 		while(1) {
@@ -243,11 +243,16 @@ void app_main(void)
 					}	
 
 				} else {
-					// need to keep track of dynamic all. mem block size
+					// need to keep track of dynamic alloc. mem block size
 					send_buf(input_buf, 3 * sizeof(float));
 				}
 			}
 		}
+
+		deinit_1d_buffer(input_buf);
+		deinit_1d_buffer(output_buf);
+		// remove the end flag
+		end = 0;
 
 		if(check_conn() == 1){
 			ESP_LOGE(TAG, "Shutting down socket and restarting...");
