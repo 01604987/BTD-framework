@@ -14,7 +14,7 @@ int addr_family = 0;
 int ip_protocol = 0;
 int sock;
 struct sockaddr_in dest_addr;
-int conn_err = 0;
+uint8_t conn_err = 0;
 
 
 void init_network(){

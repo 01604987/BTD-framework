@@ -168,36 +168,94 @@ void app_main(void)
 	TimerHandle_t end_timer;
 	end_timer = xTimerCreate("EndTimer", pdMS_TO_TICKS(20000), pdFALSE, NULL, end_callback);
 
-	init_preproc();
 	while (1) {
 		init_network();
 		if (connect_to_sock() != 1){
 			break;
 		};
-
+		
 		// col = 3 because of xyz
 		float *input_buf = init_1d_buffer(3);
 		// 1D because of magnitude. WINDOW = size of array
 		float *output_buf = init_1d_buffer(WINDOW);
 
-		int output_index = 0;
+		uint8_t output_index = 0;
 
+				
+		// TODO put these into postproc
 		char* walking = "WALKING";
 		char* idle = "IDLE";
+
+		uint8_t steps = 0;
+		uint8_t feature = 0;
+
+		extern uint8_t conn_err;
+
+		if (xTimerStart(end_timer, 0) != pdPASS) {
+        // Timer start failed
+        // Handle the error
+        }
+
 		while(1) {
+
+			// sliding window
+			if (output_index >= WINDOW) {
+				float threshold = 0.30;
+				float steps_in_window = count_steps(output_buf, WINDOW, threshold);
+				if (steps_in_window > 0) {
+					steps += steps_in_window;
+					feature = 1;
+					clear_screen();
+					draw_steps(steps);
+					draw_text(walking);
+				} else {
+					if (feature == 1) {
+						feature = 0;
+						clear_screen();
+						draw_steps(steps);
+						draw_text(idle);
+					}
+				}
+				output_index = 0;
+				continue;
+			}
 
 			vTaskDelay(10 / portTICK_PERIOD_MS);
 			getAccelData(&input_buf[0], &input_buf[1], &input_buf[2]);
 
+			// preprocess signal
 			output_buf[output_index] = preproc_magnitude(input_buf, output_buf, output_index, ORDER_1);
 
-
-			
-			// flip between index 0 and 1 because order_1 filter
 			output_index += 1;
+
+
+			if (conn_err == 1){
+				break;
+
+			} else {
+				if (end == 1){
+					const char *message = "end";
+					send_buf(message, sizeof(message)-1);
+
+					const char *response = recv_buf();
+					if (strcmp(response, "Bye!")) {
+						break;
+					}	
+
+				} else {
+					// need to keep track of dynamic all. mem block size
+					send_buf(input_buf, 3 * sizeof(float));
+				}
+			}
 		}
 
+		if(check_conn() == 1){
+			ESP_LOGE(TAG, "Shutting down socket and restarting...");
+			shutdown_conn();
+			close_sock();
+		}
 	}
+}
 
 
 	// while (1) {
@@ -319,4 +377,4 @@ void app_main(void)
 	// 	}
 	// }
 
-}
+//}

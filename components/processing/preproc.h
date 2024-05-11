@@ -14,7 +14,7 @@ static const float STEP_COEFF_B[] = {0.0861302, 0.0861302};
 
 float preproc_magnitude(float *input, float *outputs, int index, int order);
 float magnitude(float x, float y, float z);
-float apply_filter(float prev_output, float curr_input, float prev_input, float* a, float* b);
-void init_preproc();
+float apply_filter(float prev_output, float curr_input, float prev_input, float a[], float b[]);
+void reset_preproc();
 
 #endif /* __PREPROC__ */

@@ -2,24 +2,24 @@
 #include "esp_log.h"
 #include <math.h>
 
-float running_sum;
-float mean;
-int mean_counter;
-float prev_magnitude_input;
-
+float running_sum = 0.0f;
+float mean = 0.0f;
+int mean_counter = 1;
+float mag = 0;
 
 float magnitude(float x, float y, float z) {
     return sqrt(x*x + y*y + z*z);
 }
 
-float apply_filter(float prev_output, float curr_input, float prev_input, float* a, float* b){
+float apply_filter(float prev_output, float curr_input, float prev_input, float a[], float b[]){
 	float output = a[0] * prev_output + b[0] * curr_input + b[1] * prev_input;
 	return output;
 }
 
 float preproc_magnitude(float *input, float *outputs, int index, int order){
     // magnitude
-    float mag = magnitude(input[0], input[1], input[2]);
+    float prev_input = mag;
+    mag = magnitude(input[0], input[1], input[2]);
     float curr_output;
     float curr_input;
     running_sum += mag;
@@ -32,24 +32,26 @@ float preproc_magnitude(float *input, float *outputs, int index, int order){
     if (index < 1) {
         curr_output = curr_input;
     } else {
-        curr_output = apply_filter(outputs[index -1], curr_input, prev_magnitude_input, STEP_COEFF_A, STEP_COEFF_B);
+        curr_output = apply_filter(outputs[index -1], curr_input, prev_input, STEP_COEFF_A, STEP_COEFF_B);
     }
  
     mean_counter += 1;
-    prev_magnitude_input = curr_input;
     
     return curr_output;
-    // TODO finish switch case
+    // TODO finish switch case for higher order
 
     // switch(order - 1){
     //     case 1:
     //         // consider current + last input
 
     // }
+
 }
 
-void init_preproc(){
+void reset_preproc() {
     running_sum = 0.0f;
     mean = 0.0f;
     mean_counter = 1;
+    mag = 0;
 }
+
