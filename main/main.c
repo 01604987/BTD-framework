@@ -38,6 +38,7 @@
 #define ORDER_2 3
 
 static const char *TAG = "MAIN";
+int fetch_flag = 0;
 int end = 0;
 
 
@@ -113,6 +114,10 @@ void end_callback(TimerHandle_t xTimer) {
 	end = 1;
 }
 
+void fetch_imu(TimerHandle_t xTimer) {
+	fetch_flag = 1;
+}
+
 void app_main(void)
 {
 	// Mount SPIFFS File System on FLASH
@@ -134,6 +139,9 @@ void app_main(void)
 
 	TimerHandle_t end_timer;
 	end_timer = xTimerCreate("EndTimer", pdMS_TO_TICKS(20000), pdFALSE, NULL, end_callback);
+
+	TimerHandle_t signal_timer;
+	signal_timer = xTimerCreate("IMU-Signal", pdMS_TO_TICKS(10),pdTRUE, NULL, fetch_imu);
 
 	while (1) {
 		init_network();
@@ -160,18 +168,25 @@ void app_main(void)
 
 		if (xTimerStart(end_timer, 0) != pdPASS) {
 		// Error handling here.	
-        ESP_LOGE(TAG,"Timer Start failure");
+        	ESP_LOGE(TAG,"Timer Start failure");
         }
+
+		if (xTimerStart(signal_timer, 0) != pdPASS) {
+			ESP_LOGE(TAG,"IMU Timer start failuer");
+		}
+
+		
 
 		while(1) {
 
 			// sliding window
 			if (output_index >= WINDOW) {
 				float threshold = 0.30;
-				float steps_in_window = count_steps(output_buf, WINDOW, threshold);
+				float steps_in_window = 0; //count_steps(output_buf, WINDOW, threshold);
 				if (steps_in_window > 0) {
 					steps += steps_in_window;
 					feature = 1;
+					//! UPDATING SCREEN can take up alot of time and mess with the frequency of the data.
 					clear_screen();
 					draw_steps(steps);
 					draw_text(walking);
@@ -184,35 +199,38 @@ void app_main(void)
 					}
 				}
 				output_index = 0;
-				continue;
+				//continue;
 			}
 
-			vTaskDelay(10 / portTICK_PERIOD_MS);
-			getAccelData(&input_buf[0], &input_buf[1], &input_buf[2]);
+			//vTaskDelay(10 / portTICK_PERIOD_MS);
+			if (fetch_flag == 1){
+				getAccelData(&input_buf[0], &input_buf[1], &input_buf[2]);
 
-			// preprocess signal
-			output_buf[output_index] = preproc_magnitude(input_buf, output_buf, output_index, ORDER_1);
+				// preprocess signal
+				output_buf[output_index] = preproc_magnitude(input_buf, output_buf, output_index, ORDER_1);
 
-			output_index += 1;
+				output_index += 1;
 
 
-			if (conn_err == 1){
-				break;
-
-			} else {
-				if (end == 1){
-					const char *message = "end";
-					send_buf(message, sizeof(message)-1);
-
-					const char *response = recv_buf();
-					if (strcmp(response, "Bye!")) {
-						break;
-					}	
+				if (conn_err == 1){
+					break;
 
 				} else {
-					// need to keep track of dynamic alloc. mem block size
-					send_buf(input_buf, 3 * sizeof(float));
+					if (end == 1){
+						const char *message = "end";
+						send_buf(message, sizeof(message)-1);
+
+						const char *response = recv_buf();
+						if (strcmp(response, "Bye!")) {
+							break;
+						}	
+
+					} else {
+						// need to keep track of dynamic alloc. mem block size
+						send_buf(input_buf, 3 * sizeof(float));
+					}
 				}
+				fetch_flag = 0;
 			}
 		}
 
