@@ -16,10 +16,12 @@
 #endif
 
 #define PORT CONFIG_NETWORK_PORT
+#define PORT_UDP 51
 
 
 void init_network();
 int connect_to_sock();
+int bind_udp_sock();
 void send_buf(const void *dataptr, size_t size);
 char* recv_buf();
 void shutdown_conn();

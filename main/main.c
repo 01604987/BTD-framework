@@ -29,6 +29,7 @@
 #include "preproc.h"
 #include "postproc.h"
 #include "proc_utils.h"
+#include "buttons.h"
 
 #define INTERVAL 400
 #define WAIT vTaskDelay(INTERVAL)
@@ -143,6 +144,8 @@ void app_main(void)
 	TimerHandle_t signal_timer;
 	signal_timer = xTimerCreate("IMU-Signal", pdMS_TO_TICKS(10),pdTRUE, NULL, fetch_imu);
 
+	extern enum Switch finger;
+
 	while (1) {
 		init_network();
 		if (connect_to_sock() != 1){
@@ -175,61 +178,87 @@ void app_main(void)
 			ESP_LOGE(TAG,"IMU Timer start failuer");
 		}
 
-		
-
+		// main logic loop
 		while(1) {
-
-			// sliding window
-			if (output_index >= WINDOW) {
-				float threshold = 0.30;
-				float steps_in_window = 0; //count_steps(output_buf, WINDOW, threshold);
-				if (steps_in_window > 0) {
-					steps += steps_in_window;
-					feature = 1;
-					//! UPDATING SCREEN can take up alot of time and mess with the frequency of the data.
-					clear_screen();
-					draw_steps(steps);
-					draw_text(walking);
-				} else {
-					if (feature == 1) {
-						feature = 0;
-						clear_screen();
-						draw_steps(steps);
-						draw_text(idle);
-					}
-				}
-				output_index = 0;
-				//continue;
-			}
-
-			//vTaskDelay(10 / portTICK_PERIOD_MS);
+			
 			if (fetch_flag == 1){
 				getAccelData(&input_buf[0], &input_buf[1], &input_buf[2]);
 
-				// preprocess signal
-				output_buf[output_index] = preproc_magnitude(input_buf, output_buf, output_index, ORDER_1);
-
-				output_index += 1;
-
-
-				if (conn_err == 1){
+				switch (finger) {
+				//TODO slide left right.
+				case NONE:
 					break;
 
-				} else {
-					if (end == 1){
-						const char *message = "end";
-						send_buf(message, sizeof(message)-1);
+				//TODO stream xz acceleration via udp
+				case INDEX:
+					break;
 
-						const char *response = recv_buf();
-						if (strcmp(response, "Bye!")) {
-							break;
-						}	
+				//TODO originally for pressing esc and fullscreen. may be repurposed for activating left right slider.
+				case MIDDLE:
+					break;
+				
+				// for debugging purposes
+				case DEBUG:
+					break;
+
+				// example step detection + raw imu streamer via tcp
+				case DEV0:
+					// sliding window
+					if (output_index >= WINDOW) {
+						float threshold = 0.30;
+						float steps_in_window = count_steps(output_buf, WINDOW, threshold);
+						if (steps_in_window > 0) {
+							steps += steps_in_window;
+							feature = 1;
+							//! UPDATING SCREEN can take up alot of time and mess with the frequency of the data.
+							clear_screen();
+							draw_steps(steps);
+							draw_text(walking);
+						} else {
+							if (feature == 1) {
+								feature = 0;
+								clear_screen();
+								draw_steps(steps);
+								draw_text(idle);
+							}
+						}
+						output_index = 0;
+					}
+
+					// preprocess signal
+					output_buf[output_index] = preproc_magnitude(input_buf, output_buf, output_index, ORDER_1);
+
+					output_index += 1;
+
+					// send commands
+					if (conn_err == 1){
+						break;
 
 					} else {
-						// need to keep track of dynamic alloc. mem block size
-						send_buf(input_buf, 3 * sizeof(float));
+						if (end == 1){
+							const char *message = "end";
+							send_buf(message, sizeof(message)-1);
+
+							const char *response = recv_buf();
+							if (strcmp(response, "Bye!")) {
+								break;
+							}	
+
+						} else {
+							// need to keep track of dynamic alloc. mem block size
+							send_buf(input_buf, 3 * sizeof(float));
+						}
 					}
+
+				// send filtered data only
+				case DEV1:
+					break;
+
+				default:
+					break;
 				}
+
+
 				fetch_flag = 0;
 			}
 		}
