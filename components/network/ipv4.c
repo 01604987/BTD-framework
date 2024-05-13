@@ -18,6 +18,20 @@ struct sockaddr_in dest_addr;
 struct sockaddr_in dest_addr_udp;
 uint8_t conn_err = 0;
 
+void init_udp(){
+    // udp
+    dest_addr_udp.sin_family = AF_INET;
+    dest_addr_udp.sin_port = htons(PORT_UDP);
+    inet_pton(AF_INET, host_ip, &dest_addr_udp.sin_addr);
+    addr_family = AF_INET;
+    ip_protocol = IPPROTO_IP;
+    
+    sock_upd = socket(addr_family, SOCK_DGRAM, ip_protocol);
+    if (sock_upd < 0) {
+        ESP_LOGE(TAG, "Unable to create udp socket: errno %d", errno);
+    }
+    ESP_LOGI(TAG, "UDP Socket created");//, connecting to %s:%d", host_ip, PORT);
+}
 
 void init_network(){
     
@@ -34,31 +48,16 @@ void init_network(){
     }
     ESP_LOGI(TAG, "Socket created");//, connecting to %s:%d", host_ip, PORT);
 
-    // udp
-    dest_addr_udp.sin_family = AF_INET;
-    dest_addr_udp.sin_port = htons(PORT_UDP);
-    inet_pton(AF_INET, host_ip, &dest_addr_udp.sin_addr);
-    addr_family = AF_INET;
-    ip_protocol = IPPROTO_UDP;
-    
-    sock_upd = socket(addr_family, SOCK_DGRAM, ip_protocol);
-    if (sock_upd < 0) {
-        ESP_LOGE(TAG, "Unable to create udp socket: errno %d", errno);
-    }
-    ESP_LOGI(TAG, "Socket created");//, connecting to %s:%d", host_ip, PORT);
 }
 
-int bind_udp_sock() {
-    int err = bind(sock_upd, (const struct sockaddr *)&dest_addr_udp, sizeof(dest_addr_udp));
-    if (err != 0){
-        ESP_LOGE(TAG, "Udp socket unable to bind: errno %d",errno);
+void send_buf_udp(const void *dataptr, size_t size) {
+    int err = sendto(sock_upd, dataptr, size, 0, (struct sockaddr*)&dest_addr_udp, sizeof(dest_addr_udp));
+    if (err < 0) {
+        ESP_LOGE(TAG, "Error during sending udp package: errno %d", errno);
         conn_err = 1;
-        return 0;
     }
-    printf("UDP Connected\n");
-    conn_err = 0;
-    return 1;
 }
+
 
 int connect_to_sock(){
     ESP_LOGI(TAG, "Connecting to %s:%d", host_ip, PORT);

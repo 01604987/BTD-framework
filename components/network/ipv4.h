@@ -20,10 +20,11 @@
 
 
 void init_network();
+void init_udp();
 int connect_to_sock();
-int bind_udp_sock();
 void send_buf(const void *dataptr, size_t size);
 char* recv_buf();
+void send_buf_udp(const void *dataptr, size_t size);
 void shutdown_conn();
 void close_sock();
 int check_conn();

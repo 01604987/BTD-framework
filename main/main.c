@@ -139,7 +139,7 @@ void app_main(void)
     ESP_ERROR_CHECK(example_connect());
 
 	TimerHandle_t end_timer;
-	end_timer = xTimerCreate("EndTimer", pdMS_TO_TICKS(20000), pdFALSE, NULL, end_callback);
+	end_timer = xTimerCreate("EndTimer", pdMS_TO_TICKS(60000), pdFALSE, NULL, end_callback);
 
 	TimerHandle_t signal_timer;
 	signal_timer = xTimerCreate("IMU-Signal", pdMS_TO_TICKS(10),pdTRUE, NULL, fetch_imu);
@@ -148,10 +148,10 @@ void app_main(void)
 
 	while (1) {
 		init_network();
+		init_udp();
 		if (connect_to_sock() != 1){
 			break;
 		};
-		
 		// col = 3 because of xyz
 		float *input_buf = init_1d_buffer(3);
 		// 1D because of magnitude. WINDOW = size of array
@@ -252,7 +252,11 @@ void app_main(void)
 
 				// send filtered data only
 				case DEV1:
-					break;
+					if (conn_err == 1) {
+						break;
+					} else {
+						send_buf_udp(input_buf, 3 * sizeof(float));
+					}
 
 				default:
 					break;
