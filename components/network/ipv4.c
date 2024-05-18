@@ -21,7 +21,7 @@ uint8_t conn_err = 0;
 void init_udp(){
     // udp
     dest_addr_udp.sin_family = AF_INET;
-    dest_addr_udp.sin_port = htons(PORT_UDP);
+    dest_addr_udp.sin_port = htons(PORT);
     inet_pton(AF_INET, host_ip, &dest_addr_udp.sin_addr);
     addr_family = AF_INET;
     ip_protocol = IPPROTO_IP;

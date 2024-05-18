@@ -157,6 +157,13 @@ void app_main(void)
 		// 1D because of magnitude. WINDOW = size of array
 		float *output_buf = init_1d_buffer(WINDOW);
 
+		// ===================================================================
+		int16_t *imu_buf = init_1d_buffer_int(6);
+		uint8_t imu_buf_size = 6* sizeof(int16_t);
+		float *imu_buf_float = init_1d_buffer(6);
+		uint8_t imu_buf_float_size = 6*sizeof(float);
+
+		// ===================================================================
 		uint8_t output_index = 0;
 
 				
@@ -252,10 +259,12 @@ void app_main(void)
 
 				// send filtered data only
 				case DEV1:
-					if (conn_err == 1) {
+					getAccelData(&imu_buf_float[0], &imu_buf_float[1], &imu_buf_float[2]);
+					getRotData(&imu_buf_float[3], &imu_buf_float[4], &imu_buf_float[5]);
+					if (check_conn() == 0) {
 						break;
 					} else {
-						send_buf_udp(input_buf, 3 * sizeof(float));
+						send_buf_udp(imu_buf_float, imu_buf_float_size);
 					}
 
 				default:

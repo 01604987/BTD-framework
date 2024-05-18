@@ -5,7 +5,7 @@
 
 
 
-
+int16_t* init_1d_buffer_int(int row);
 float* init_1d_buffer(int row);
 void deinit_1d_buffer(float * buf);
 

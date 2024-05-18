@@ -17,6 +17,7 @@
 # define MPU6886_INT_PIN_CFG_REG_ADDR            0x37
 # define MPU6886_INT_ENABLE_REG_ADDR             0x38
 # define MPU6886_ACCEL_XOUT_REG_ADDR             0x3B
+# define MPU6886_GYRO_XOUT_REG_ADDR              0x43
 # define MPU6886_USER_CRTL_REG_ADDR              0x6A
 # define MPU6886_PWR_MGMT_1_REG_ADDR             0x6B
 # define MPU6886_PWR_MGMT_2_REG_ADDR             0x6C
@@ -26,6 +27,8 @@ esp_err_t mpu6886_register_write_byte(uint8_t reg_addr, uint8_t data);
 void init_mpu6886(void);
 void getAccelAdc(int16_t* ax, int16_t* ay, int16_t* az);
 void getAccelData(float* ax, float* ay, float* az);
+void getRotAdc(int16_t* ax, int16_t* ay, int16_t* az);
+void getRotData(float* ax, float* ay, float* az);
 
 
 
