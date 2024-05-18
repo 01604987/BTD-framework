@@ -94,8 +94,12 @@ void getRotData(float* gx, float* gy, float* gz) {
     int16_t rotZ = 0;
     getRotAdc(&rotX, &rotY, &rotZ);
     float gRes = 2000.0 / 32768.0;
+    float toDeg = 131;
 
-    *gx = (float)rotX * gRes;
-    *gy = (float)rotY * gRes;
-    *gz = (float)rotZ * gRes;
+    // *gx = (float)rotX * gRes;
+    // *gy = (float)rotY * gRes;
+    // *gz = (float)rotZ * gRes;
+    *gx = (float)rotX / toDeg;
+    *gy = (float)rotY / toDeg;
+    *gz = (float)rotZ / toDeg;
 }
