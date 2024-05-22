@@ -119,8 +119,6 @@ void fetch_imu(TimerHandle_t xTimer) {
 	fetch_flag = 1;
 }
 
-extern volatile button_state_t button_state;
-
 void app_main(void)
 {
 	// Mount SPIFFS File System on FLASH
@@ -148,6 +146,8 @@ void app_main(void)
 	TimerHandle_t signal_timer;
 	signal_timer = xTimerCreate("IMU-Signal", pdMS_TO_TICKS(10),pdTRUE, NULL, fetch_imu);
 
+	extern volatile button_state_t button_state_index;
+	extern volatile button_state_t button_state_middle;	
 	extern enum Switch finger;
 
 	while (1) {
@@ -195,20 +195,14 @@ void app_main(void)
 
 				//TODO stream xz acceleration via udp
 				case INDEX:
+					ESP_LOGI(TAG, "Index Finger pressed");
 					break;
 
 				//TODO originally for pressing esc and fullscreen. may be repurposed for activating left right slider.
 				case MIDDLE:
-				/*
-					if (button_state == BUTTON_PRESSED) {
-                            ESP_LOGI(TAG, "Main: Button Pressed");
-                        } else if (button_state == BUTTON_HELD) {
-                            ESP_LOGI(TAG, "Main: Button Held");
-                        } else if (button_state == BUTTON_RELEASED) {
-                            ESP_LOGI(TAG, "Main: Button Released");
-                        }
-                        break;
-				*/
+					ESP_LOGI(TAG, "Middle Finger pressed");
+                    break;
+				
 				
 				// for debugging purposes
 				case DEBUG:

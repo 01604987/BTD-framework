@@ -3,7 +3,8 @@
 
 #include "driver/gpio.h"
 
-#define BUTTON_PIN 37
+#define BUTTON_PIN_INDEX GPIO_NUM_37
+#define BUTTON_PIN_MIDDLE GPIO_NUM_39
 
 enum Switch{
     NONE,
@@ -21,13 +22,12 @@ typedef enum {
     BUTTON_HELD
 } button_state_t;
 
+extern volatile button_state_t button_state_index;
+extern volatile button_state_t button_state_middle;
+
+extern enum Switch finger;
 
 void init_button();
 
 #endif // BUTTONS_H
-
-
-
-// TODO define functions for initialization (registering buttons, etc)
-// TODO implement callback functions that sets finger var to enum values
 
