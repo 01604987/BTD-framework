@@ -119,6 +119,8 @@ void fetch_imu(TimerHandle_t xTimer) {
 	fetch_flag = 1;
 }
 
+extern volatile button_state_t button_state;
+
 void app_main(void)
 {
 	// Mount SPIFFS File System on FLASH
@@ -137,6 +139,8 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_netif_init());
 	ESP_ERROR_CHECK(esp_event_loop_create_default());
     ESP_ERROR_CHECK(example_connect());
+
+	init_button();
 
 	TimerHandle_t end_timer;
 	end_timer = xTimerCreate("EndTimer", pdMS_TO_TICKS(20000), pdFALSE, NULL, end_callback);
@@ -195,7 +199,16 @@ void app_main(void)
 
 				//TODO originally for pressing esc and fullscreen. may be repurposed for activating left right slider.
 				case MIDDLE:
-					break;
+				/*
+					if (button_state == BUTTON_PRESSED) {
+                            ESP_LOGI(TAG, "Main: Button Pressed");
+                        } else if (button_state == BUTTON_HELD) {
+                            ESP_LOGI(TAG, "Main: Button Held");
+                        } else if (button_state == BUTTON_RELEASED) {
+                            ESP_LOGI(TAG, "Main: Button Released");
+                        }
+                        break;
+				*/
 				
 				// for debugging purposes
 				case DEBUG:
