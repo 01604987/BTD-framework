@@ -35,7 +35,7 @@ void button_task(void* arg) {
             button_state = BUTTON_HELD;
         } else if (button_state == BUTTON_HELD) {
             uint32_t current_time = xTaskGetTickCount();
-            if (current_time - button_press_start_time > pdMS_TO_TICKS(1000)) { // Button held for more than 1 second
+            if (current_time - button_press_start_time > pdMS_TO_TICKS(500)) { // Button held for more than 500 milliseconds
                 ESP_LOGI(TAG, "Button held");
             }
         } else if (button_state == BUTTON_RELEASED) {
