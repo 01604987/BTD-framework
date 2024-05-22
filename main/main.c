@@ -42,7 +42,6 @@ static const char *TAG = "MAIN";
 int fetch_flag = 0;
 int end = 0;
 
-
 esp_err_t mountSPIFFS(char * partition_label, char * mount_point) {
 	ESP_LOGI(TAG, "Initializing SPIFFS");
 	esp_vfs_spiffs_conf_t conf = {
@@ -119,6 +118,10 @@ void fetch_imu(TimerHandle_t xTimer) {
 	fetch_flag = 1;
 }
 
+extern volatile button_state_t button_state_index;
+extern volatile button_state_t button_state_middle;	
+extern enum Switch finger;
+
 void app_main(void)
 {
 	// Mount SPIFFS File System on FLASH
@@ -145,10 +148,6 @@ void app_main(void)
 
 	TimerHandle_t signal_timer;
 	signal_timer = xTimerCreate("IMU-Signal", pdMS_TO_TICKS(10),pdTRUE, NULL, fetch_imu);
-
-	extern volatile button_state_t button_state_index;
-	extern volatile button_state_t button_state_middle;	
-	extern enum Switch finger;
 
 	while (1) {
 		init_network();
@@ -191,18 +190,28 @@ void app_main(void)
 				switch (finger) {
 				//TODO slide left right.
 				case NONE:
+					ESP_LOGI(TAG, "No Finger pressed");	
 					break;
 
 				//TODO stream xz acceleration via udp
 				case INDEX:
-					ESP_LOGI(TAG, "Index Finger pressed");
+					if (button_state_index == BUTTON_PRESSED)
+					{
+						ESP_LOGI(TAG, "Index Finger pressed");
+					} else if (button_state_index == BUTTON_HELD) {
+						ESP_LOGI(TAG, "Index Finger held");
+					}	
 					break;
 
 				//TODO originally for pressing esc and fullscreen. may be repurposed for activating left right slider.
 				case MIDDLE:
-					ESP_LOGI(TAG, "Middle Finger pressed");
+					if (button_state_middle == BUTTON_PRESSED)
+					{
+						ESP_LOGI(TAG, "Middle Finger pressed");
+					} else if (button_state_middle == BUTTON_HELD) {
+						ESP_LOGI(TAG, "Middle Finger held");
+					}	
                     break;
-				
 				
 				// for debugging purposes
 				case DEBUG:

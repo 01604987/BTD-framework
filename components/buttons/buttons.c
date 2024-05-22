@@ -50,28 +50,20 @@ static void IRAM_ATTR button_isr_handler(void* arg) {
 void button_task(void* arg) {
     while (1) {
         if (button_state_index == BUTTON_PRESSED) {
-            ESP_LOGI(TAG, "Button Index pressed");
-            button_state_index = BUTTON_HELD;
-        } else if (button_state_index == BUTTON_HELD) {
             uint32_t current_time = xTaskGetTickCount();
-            if (current_time - button_press_start_time_index > pdMS_TO_TICKS(500)) { // Button held for more than 500 milliseconds
-                ESP_LOGI(TAG, "Button Index held");
+            if (current_time - button_press_start_time_index > pdMS_TO_TICKS(500)) {
+                    button_state_index = BUTTON_HELD;
             }
         } else if (button_state_index == BUTTON_RELEASED) {
-            ESP_LOGI(TAG, "Button Index released");
             button_press_start_time_index = 0;
         }
 
         if (button_state_middle == BUTTON_PRESSED) {
-            ESP_LOGI(TAG, "Button Middle pressed");
-            button_state_middle = BUTTON_HELD;
-        } else if (button_state_middle == BUTTON_HELD) {
-            uint32_t current_time = xTaskGetTickCount();
-            if (current_time - button_press_start_time_middle > pdMS_TO_TICKS(500)) { // Button held for more than 500 milliseconds
-                ESP_LOGI(TAG, "Button Middle held");
+             uint32_t current_time = xTaskGetTickCount();
+            if (current_time - button_press_start_time_middle > pdMS_TO_TICKS(500)) {
+                    button_state_middle = BUTTON_HELD;
             }
         } else if (button_state_middle == BUTTON_RELEASED) {
-            ESP_LOGI(TAG, "Button Middle released");
             button_press_start_time_middle = 0;
         }
 
