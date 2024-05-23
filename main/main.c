@@ -139,7 +139,7 @@ void app_main(void)
     ESP_ERROR_CHECK(example_connect());
 
 	TimerHandle_t end_timer;
-	end_timer = xTimerCreate("EndTimer", pdMS_TO_TICKS(60000), pdFALSE, NULL, end_callback);
+	end_timer = xTimerCreate("EndTimer", pdMS_TO_TICKS(30000), pdFALSE, NULL, end_callback);
 
 	TimerHandle_t signal_timer;
 	signal_timer = xTimerCreate("IMU-Signal", pdMS_TO_TICKS(10),pdTRUE, NULL, fetch_imu);
@@ -175,16 +175,28 @@ void app_main(void)
 		uint8_t feature = 0;
 
 		extern uint8_t conn_err;
-
+		
+		// DEBUG
+		goto do_not_init_end_timer;
+		// DEBUG
+		
 		if (xTimerStart(end_timer, 0) != pdPASS) {
 		// Error handling here.	
         	ESP_LOGE(TAG,"Timer Start failure");
         }
 
+		// DEBUG
+		do_not_init_end_timer: ;
+		// DEBUG
+
+
+		
 		if (xTimerStart(signal_timer, 0) != pdPASS) {
 			ESP_LOGE(TAG,"IMU Timer start failuer");
 		}
 
+		clear_screen();
+		draw_text("Device \nInitialized");
 		// main logic loop
 		while(1) {
 			
@@ -261,10 +273,21 @@ void app_main(void)
 				case DEV1:
 					getAccelData(&imu_buf_float[0], &imu_buf_float[1], &imu_buf_float[2]);
 					getRotData(&imu_buf_float[3], &imu_buf_float[4], &imu_buf_float[5]);
-					if (check_conn() == 0) {
-						break;
+					if (conn_err == 1) {
+						ESP_LOGE(TAG, "Host socket closed");
+						goto exit_loop;
 					} else {
 						send_buf_udp(imu_buf_float, imu_buf_float_size);
+					}
+
+					if (end == 1){
+						const char *message = "end";
+						send_buf(message, sizeof(message)-1);
+
+						const char *response = recv_buf();
+						if (strcmp(response, "Bye!")) {
+							goto exit_loop;
+						}	
 					}
 
 				default:
@@ -275,9 +298,12 @@ void app_main(void)
 				fetch_flag = 0;
 			}
 		}
+		exit_loop: ;
 
 		deinit_1d_buffer(input_buf);
 		deinit_1d_buffer(output_buf);
+		deinit_1d_buffer(imu_buf);
+		deinit_1d_buffer(imu_buf_float);
 		// remove the end flag
 		end = 0;
 
