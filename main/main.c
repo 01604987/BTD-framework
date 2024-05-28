@@ -252,7 +252,7 @@ void app_main(void)
 							clear_screen();
 							draw_text((char *)"Right Swipe");
 							// Send Command via TCP
-							const char *message = "SwipeRight";
+							const char *message = "CSR";
 							send_buf(message, sizeof(message) - 1);
 						}
 						else if (swipe_direction == SWIPE_RIGHT_TO_LEFT)
@@ -261,7 +261,7 @@ void app_main(void)
 							clear_screen();
 							draw_text((char *)"Left Swipe");
 							// Send Command via TCP
-							const char *message = "SwipeLeft";
+							const char *message = "CSL";
 							send_buf(message, sizeof(message) - 1);
 						}
 
