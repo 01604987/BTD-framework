@@ -27,6 +27,8 @@ char* recv_buf();
 void send_buf_udp(const void *dataptr, size_t size);
 void shutdown_conn();
 void close_sock();
+void shutdown_conn_udp();
+void close_sock_udp();
 int check_conn();
 
 #endif /* __IPV4__ */

@@ -109,6 +109,17 @@ void close_sock() {
     close(sock);
 }
 
+
+
+void shutdown_conn_udp(){
+    shutdown(sock_upd, SHUT_RDWR);
+}
+
+void close_sock_udp() {
+    close(sock_upd);
+}
+
+
 int check_conn() {
     // host socket closed
     if (sock == -1) {
