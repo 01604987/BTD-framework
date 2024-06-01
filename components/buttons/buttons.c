@@ -54,7 +54,7 @@ static void IRAM_ATTR button_isr_handler(void* arg) {
 
 void button_task(void* arg) {
     while (1) {
-        if (button_state_index == BUTTON_PRESSED) {
+        if (button_state_index == BUTTON_PRESSED || button_state_middle == BUTTON_DOUBLE_TAP) {
             uint32_t current_time = xTaskGetTickCount();
             if (current_time - button_press_start_time_index > pdMS_TO_TICKS(HOLD_TIME_MS)) {
                     button_state_index = BUTTON_HOLD;
