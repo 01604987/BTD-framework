@@ -3,6 +3,16 @@
 
 static const char *TAG = "PROC_UTILS";
 
+int16_t* init_1d_buffer_int(int size) {
+    int16_t * d_buffer = (int16_t *)malloc(size * sizeof(int16_t));
+    if (d_buffer == NULL) {
+       ESP_LOGE(TAG, "Error allocating mem for  1d array.");
+        return NULL;
+    }
+    return d_buffer;
+}
+
+
 float* init_1d_buffer(int size){
     float * d_buffer = (float *)malloc(size * sizeof(float));
     if (d_buffer == NULL) {

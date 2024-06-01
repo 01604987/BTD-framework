@@ -78,3 +78,28 @@ void getAccelData(float* ax, float* ay, float* az)
     *ay = (float)accY * aRes;
     *az = (float)accZ * aRes;
 }
+
+void getRotAdc(int16_t* gx, int16_t* gy, int16_t* gz) {
+    uint8_t buf[6];
+    mpu6886_register_read(MPU6886_GYRO_XOUT_REG_ADDR, buf, 6);
+    // combine 2 array entries following each other into one variable
+    *gx = ((int16_t)buf[0] << 8) | buf[1];
+    *gy = ((int16_t)buf[2] << 8) | buf[3];
+    *gz = ((int16_t)buf[4] << 8) | buf[5];
+}
+
+void getRotData(float* gx, float* gy, float* gz) {
+    int16_t rotX = 0;
+    int16_t rotY = 0;
+    int16_t rotZ = 0;
+    getRotAdc(&rotX, &rotY, &rotZ);
+    float gRes = 2000.0 / 32768.0;
+    float toDeg = 131;
+
+    // *gx = (float)rotX * gRes;
+    // *gy = (float)rotY * gRes;
+    // *gz = (float)rotZ * gRes;
+    *gx = (float)rotX / toDeg;
+    *gy = (float)rotY / toDeg;
+    *gz = (float)rotZ / toDeg;
+}

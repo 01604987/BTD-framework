@@ -11,6 +11,7 @@ This repository contains project source code based on esp-idf. The target device
 - With `ctrl + shift + p` search for Device Configuration.
     - Target device is eps32 with via USB Bridge
     - Baud rate is 115200
+- Full clean the project (delete build folder) in case of build errors
 - Build the project
 - Flash onto m5 stick 
 
