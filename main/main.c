@@ -190,15 +190,17 @@ void app_main(void)
 				switch (finger) {
 				//TODO slide left right.
 				case NONE:
-					ESP_LOGI(TAG, "No Finger pressed");	
+					ESP_LOGE(TAG,"NONE");
+					//ESP_LOGI(TAG, "No Finger pressed");	
 					break;
 
 				//TODO stream xz acceleration via udp
 				case INDEX:
+					ESP_LOGE(TAG,"INDEX");
 					if (button_state_index == BUTTON_PRESSED)
 					{
 						ESP_LOGI(TAG, "Index Finger pressed");
-					} else if (button_state_index == BUTTON_HELD) {
+					} else if (button_state_index == BUTTON_HOLD) {
 						ESP_LOGI(TAG, "Index Finger held");
 					}	
 					break;
@@ -208,10 +210,28 @@ void app_main(void)
 					if (button_state_middle == BUTTON_PRESSED)
 					{
 						ESP_LOGI(TAG, "Middle Finger pressed");
-					} else if (button_state_middle == BUTTON_HELD) {
+					} else if (button_state_middle == BUTTON_HOLD) {
 						ESP_LOGI(TAG, "Middle Finger held");
 					}	
                     break;
+
+				case DOUBLE_TAP_INDEX:
+					ESP_LOGE(TAG,"DOUBLE TAP INDEX");
+					if (button_state_index == BUTTON_DOUBLE_TAP)
+					{
+						ESP_LOGI(TAG, "Index Finger DOUBLE TAP");
+					} else if (button_state_index == BUTTON_HOLD) {
+						ESP_LOGI(TAG, "Index Finger TAP + HOLD");
+					} 
+                    break;	
+
+				case DOUBLE_TAP_MIDDLE:
+					if (button_state_middle == BUTTON_DOUBLE_TAP) {
+						ESP_LOGI(TAG, "Middle Finger DOUBLE TAP");
+					} 
+					else if (button_state_middle == BUTTON_HOLD) {
+						ESP_LOGI(TAG, "Middle Finger TAP + HOLD");
+					}		
 				
 				// for debugging purposes
 				case DEBUG:
