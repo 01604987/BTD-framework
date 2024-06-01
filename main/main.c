@@ -289,7 +289,6 @@ void app_main(void)
 
 				// TODO stream xz acceleration via udp
 				case INDEX:
-					ESP_LOGE(TAG,"INDEX");
 					if (button_state_index == BUTTON_PRESSED)
 					{
 						ESP_LOGI(TAG, "Index Finger pressed");
@@ -309,7 +308,6 @@ void app_main(void)
                     break;
 
 				case DOUBLE_TAP_INDEX:
-					ESP_LOGE(TAG,"DOUBLE TAP INDEX");
 					if (button_state_index == BUTTON_DOUBLE_TAP)
 					{
 						ESP_LOGI(TAG, "Index Finger DOUBLE TAP");
