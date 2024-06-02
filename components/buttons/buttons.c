@@ -22,31 +22,25 @@ static void IRAM_ATTR button_isr_handler(void* arg) {
         if (gpio_num == BUTTON_PIN_INDEX) {
             if (current_time - last_tap_time_index <= DOUBLE_TAP_TIME_MS && button_state_index == BUTTON_RELEASED) {
                 button_state_index = BUTTON_DOUBLE_TAP;
-                finger = DOUBLE_TAP_INDEX;
             } else {
                 button_state_index = BUTTON_PRESSED;
-                finger = INDEX;
             }
             button_press_start_time_index = current_time;
             last_tap_time_index = current_time;
         } else if (gpio_num == BUTTON_PIN_MIDDLE) {
             if (current_time - last_tap_time_middle <= DOUBLE_TAP_TIME_MS && button_state_middle == BUTTON_RELEASED) {
                 button_state_middle = BUTTON_DOUBLE_TAP;
-                finger = DOUBLE_TAP_MIDDLE;
             } else {
                 button_state_middle = BUTTON_PRESSED;
-                finger = MIDDLE;
             }
             button_press_start_time_middle = current_time;
             last_tap_time_middle = current_time;
         }
     } else {  // Button released
-        if (gpio_num == BUTTON_PIN_INDEX) {
+        if (gpio_num == BUTTON_PIN_INDEX && button_state_index != BUTTON_RELEASED) {
             button_state_index = BUTTON_RELEASED;
-            finger = NONE;  
-        } else if (gpio_num == BUTTON_PIN_MIDDLE) {
+        } else if (gpio_num == BUTTON_PIN_MIDDLE && button_state_middle != BUTTON_RELEASED) {
             button_state_middle = BUTTON_RELEASED;
-            finger = NONE;
         }
     }
 }
@@ -54,23 +48,29 @@ static void IRAM_ATTR button_isr_handler(void* arg) {
 
 void button_task(void* arg) {
     while (1) {
-        if (button_state_index == BUTTON_PRESSED || button_state_middle == BUTTON_DOUBLE_TAP) {
+        if (button_state_index == BUTTON_PRESSED || button_state_index == BUTTON_DOUBLE_TAP) {
+            finger = (button_state_index == BUTTON_PRESSED) ? INDEX : DOUBLE_TAP_INDEX;
             uint32_t current_time = xTaskGetTickCount();
             if (current_time - button_press_start_time_index > pdMS_TO_TICKS(HOLD_TIME_MS)) {
                     button_state_index = BUTTON_HOLD;
             }
         } else if (button_state_index == BUTTON_RELEASED) {
+            if (button_state_middle == BUTTON_RELEASED)
+            {
+                finger = NONE;
+                button_press_start_time_middle = 0;
+            }
+            
             button_press_start_time_index = 0;
         }
 
         if (button_state_middle == BUTTON_PRESSED || button_state_middle == BUTTON_DOUBLE_TAP) {
+            finger = (button_state_middle == BUTTON_PRESSED) ? MIDDLE : DOUBLE_TAP_MIDDLE;
             uint32_t current_time = xTaskGetTickCount();
             if (current_time - button_press_start_time_middle > pdMS_TO_TICKS(HOLD_TIME_MS)) {
                     button_state_middle = BUTTON_HOLD;
             }
-        } else if (button_state_middle == BUTTON_RELEASED) {
-            button_press_start_time_middle = 0;
-        }    
+        } 
 
         vTaskDelay(pdMS_TO_TICKS(100)); // Polling interval
     }
