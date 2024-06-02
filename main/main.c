@@ -149,6 +149,7 @@ void clear_buffer(float buffer[][3], int size)
 extern volatile button_state_t button_state_index;
 extern volatile button_state_t button_state_middle;	
 extern enum Switch finger;
+enum Switch last_finger_state = NONE;
 
 void app_main(void)
 {
@@ -232,7 +233,6 @@ void app_main(void)
 		// main logic loop
 		while (1)
 		{
-
 			if (fetch_flag == 1)
 			{
 				getAccelData(&input_buf[0], &input_buf[1], &input_buf[2]);
@@ -289,7 +289,7 @@ void app_main(void)
 
 				// TODO stream xz acceleration via udp
 				case INDEX:
-					if (button_state_index == BUTTON_PRESSED)
+					if (button_state_index == BUTTON_PRESSED && last_finger_state != finger)
 					{
 						ESP_LOGI(TAG, "Index Finger pressed");
 					} else if (button_state_index == BUTTON_HOLD) {
@@ -299,7 +299,7 @@ void app_main(void)
 
 				// TODO originally for pressing esc and fullscreen. may be repurposed for activating left right slider.
 				case MIDDLE:
-					if (button_state_middle == BUTTON_PRESSED)
+					if (button_state_middle == BUTTON_PRESSED && last_finger_state != finger)
 					{
 						ESP_LOGI(TAG, "Middle Finger pressed");
 					} else if (button_state_middle == BUTTON_HOLD) {
@@ -308,7 +308,7 @@ void app_main(void)
                     break;
 
 				case DOUBLE_TAP_INDEX:
-					if (button_state_index == BUTTON_DOUBLE_TAP)
+					if (button_state_index == BUTTON_DOUBLE_TAP && last_finger_state != finger)
 					{
 						ESP_LOGI(TAG, "Index Finger DOUBLE TAP");
 					} else if (button_state_index == BUTTON_HOLD) {
@@ -317,7 +317,7 @@ void app_main(void)
                     break;	
 
 				case DOUBLE_TAP_MIDDLE:
-					if (button_state_middle == BUTTON_DOUBLE_TAP) {
+					if (button_state_middle == BUTTON_DOUBLE_TAP && last_finger_state != finger) {
 						ESP_LOGI(TAG, "Middle Finger DOUBLE TAP");
 					} 
 					else if (button_state_middle == BUTTON_HOLD) {
@@ -406,6 +406,7 @@ void app_main(void)
 				}
 
 				fetch_flag = 0;
+				last_finger_state = finger;
 			}
 		}
 
