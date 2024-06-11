@@ -170,6 +170,13 @@ void create_end_listener() {
 	}
 }
 
+void send_tap(){
+	if (finger == NONE) {
+		const char *message = "itap";
+		send_buf(message, strlen(message));
+	}
+}
+
 extern volatile button_state_t button_state_index;
 extern volatile button_state_t button_state_middle;	
 extern enum Switch finger;
@@ -202,6 +209,11 @@ void app_main(void)
 	TimerHandle_t signal_timer;
 	signal_timer = xTimerCreate("IMU-Signal", pdMS_TO_TICKS(10), pdTRUE, NULL, fetch_imu);
 
+	TimerHandle_t i_tap_timer;
+	i_tap_timer = xTimerCreate("Index-Timer", pdMS_TO_TICKS(300), pdFALSE, NULL, send_tap);
+
+	TimerHandle_t i_double_tap_timer;
+	i_double_tap_timer = xTimerCreate("Index-Timer", pdMS_TO_TICKS(300), pdFALSE, NULL, send_tap);
 
 	while (1)
 	{
@@ -285,7 +297,7 @@ void app_main(void)
 				{
 				// TODO slide left right.
 				case NONE:
-
+					// deinit mouse
 					if (init_mouse == 1) {
 						const char *message = "mstop";
 						send_buf(message, strlen(message));
@@ -361,8 +373,45 @@ void app_main(void)
 					if (button_state_index == BUTTON_DOUBLE_TAP && last_finger_state != finger)
 					{
 						ESP_LOGI(TAG, "Index Finger DOUBLE TAP");
+						if (conn_err == 1) {
+							ESP_LOGE(TAG, "Host socket closed");
+							goto exit_loop;
+						} else {
+							if (xTimerStart(i_double_tap_timer, 0) != pdPASS) {
+								ESP_LOGE(TAG, "Index doubleTap timer Start failure");
+							}
+						}
 					} else if (button_state_index == BUTTON_HOLD) {
+						if (xTimerStop(i_tap_timer, 0) != pdPASS) {
+								ESP_LOGE(TAG, "Index tap timer stop failure");
+						}
+						if (xTimerStop(i_double_tap_timer, 0) != pdPASS) {
+								ESP_LOGE(TAG, "Index doubleTap timer stop failure");
+						}
+
 						ESP_LOGI(TAG, "Index Finger TAP + HOLD");
+						if (conn_err == 1) {
+							ESP_LOGE(TAG, "Host socket closed");
+							goto exit_loop;
+						} else if (init_mouse == 0 ) {
+							ESP_LOGI(TAG, "Init mouse hold");
+							const char *message = "mhold";
+							send_buf(message, strlen(message));
+							message = "mbegin";
+							send_buf(message, strlen(message));
+							init_mouse = 1; 
+						}
+
+						getAccelData(&imu_buf_float[0], &imu_buf_float[1], &imu_buf_float[2]);
+						getRotData(&imu_buf_float[3], &imu_buf_float[4], &imu_buf_float[5]);
+						
+						if (conn_err == 1) {
+							ESP_LOGE(TAG, "Host socket closed");
+							goto exit_loop;
+						} else {
+							send_buf_udp(imu_buf_float, imu_buf_float_size);
+						}
+
 					} 
                     break;	
 
@@ -443,13 +492,25 @@ void app_main(void)
 					if (button_state_index == BUTTON_PRESSED && last_finger_state != finger)
 					{
 						ESP_LOGI(TAG, "Index Finger pressed");
+						if (conn_err == 1) {
+							ESP_LOGE(TAG, "Host socket closed");
+							goto exit_loop;
+						} else {
+							if (xTimerStart(i_tap_timer, 0) != pdPASS) {
+									ESP_LOGE(TAG, "Index Tap timer Start failure");
+								}
+						}
 					} else if (button_state_index == BUTTON_HOLD) {
+						if (xTimerStop(i_tap_timer, 0) != pdPASS) {
+							ESP_LOGE(TAG, "Index Tap timer stop failure");
+						}
+						
 
 						if (conn_err == 1) {
 							ESP_LOGE(TAG, "Host socket closed");
 							goto exit_loop;
 						} else if (init_mouse == 0 ) {
-							ESP_LOGE(TAG, "Initializing mouse");
+							ESP_LOGI(TAG, "Initializing mouse");
 							const char *message = "mbegin";
 							send_buf(message, strlen(message));
 							init_mouse = 1;
