@@ -170,6 +170,11 @@ void create_end_listener() {
 	}
 }
 
+extern volatile button_state_t button_state_index;
+extern volatile button_state_t button_state_middle;	
+extern enum Switch finger;
+enum Switch last_finger_state = NONE;
+
 void app_main(void)
 {
 	// Mount SPIFFS File System on FLASH
@@ -189,13 +194,14 @@ void app_main(void)
 	ESP_ERROR_CHECK(esp_event_loop_create_default());
 	ESP_ERROR_CHECK(example_connect());
 
+	init_button();
+
 	TimerHandle_t end_timer;
 	end_timer = xTimerCreate("EndTimer", pdMS_TO_TICKS(30000), pdFALSE, NULL, end_callback);
 
 	TimerHandle_t signal_timer;
 	signal_timer = xTimerCreate("IMU-Signal", pdMS_TO_TICKS(10), pdTRUE, NULL, fetch_imu);
 
-	extern enum Switch finger;
 
 	while (1)
 	{
@@ -238,7 +244,7 @@ void app_main(void)
 
 		uint8_t steps = 0;
 		uint8_t feature = 0;
-
+		uint8_t init_mouse = 0;
 		extern uint8_t conn_err;
 
 		// DEBUG
@@ -271,7 +277,6 @@ void app_main(void)
 		// main logic loop
 		while (1)
 		{
-
 			if (fetch_flag == 1)
 			{
 				getAccelData(&input_buf[0], &input_buf[1], &input_buf[2]);
@@ -280,6 +285,12 @@ void app_main(void)
 				{
 				// TODO slide left right.
 				case NONE:
+
+					if (init_mouse == 1) {
+						const char *message = "mstop";
+						send_buf(message, strlen(message));
+						init_mouse = 0;
+					}
 					// Add data to swipe buffer
 					swipe_buffer[swipe_index][0] = input_buf[0];
 					swipe_buffer[swipe_index][1] = input_buf[1];
@@ -327,13 +338,42 @@ void app_main(void)
 					break;
 
 				// TODO stream xz acceleration via udp
-				case INDEX:
+				case DEV1:
+					if (button_state_index == BUTTON_PRESSED && last_finger_state != finger)
+					{
+						ESP_LOGI(TAG, "Index Finger pressed");
+					} else if (button_state_index == BUTTON_HOLD) {
+						ESP_LOGI(TAG, "Index Finger held");
+					}	
 					break;
 
 				// TODO originally for pressing esc and fullscreen. may be repurposed for activating left right slider.
 				case MIDDLE:
-					break;
+					if (button_state_middle == BUTTON_PRESSED && last_finger_state != finger)
+					{
+						ESP_LOGI(TAG, "Middle Finger pressed");
+					} else if (button_state_middle == BUTTON_HOLD) {
+						ESP_LOGI(TAG, "Middle Finger held");
+					}	
+                    break;
 
+				case DOUBLE_TAP_INDEX:
+					if (button_state_index == BUTTON_DOUBLE_TAP && last_finger_state != finger)
+					{
+						ESP_LOGI(TAG, "Index Finger DOUBLE TAP");
+					} else if (button_state_index == BUTTON_HOLD) {
+						ESP_LOGI(TAG, "Index Finger TAP + HOLD");
+					} 
+                    break;	
+
+				case DOUBLE_TAP_MIDDLE:
+					if (button_state_middle == BUTTON_DOUBLE_TAP && last_finger_state != finger) {
+						ESP_LOGI(TAG, "Middle Finger DOUBLE TAP");
+					} 
+					else if (button_state_middle == BUTTON_HOLD) {
+						ESP_LOGI(TAG, "Middle Finger TAP + HOLD");
+					}		
+				
 				// for debugging purposes
 				case DEBUG:
 					break;
@@ -398,34 +438,56 @@ void app_main(void)
 					}
 
 				// send filtered data only
-				case DEV1:
-					getAccelData(&imu_buf_float[0], &imu_buf_float[1], &imu_buf_float[2]);
-					getRotData(&imu_buf_float[3], &imu_buf_float[4], &imu_buf_float[5]);
-					
-					if (conn_err == 1) {
-						ESP_LOGE(TAG, "Host socket closed");
-						goto exit_loop;
-					} else {
-						send_buf_udp(imu_buf_float, imu_buf_float_size);
-					}
+				case INDEX:
 
-					if (end == 1){
-						goto exit_loop;
+					if (button_state_index == BUTTON_PRESSED && last_finger_state != finger)
+					{
+						ESP_LOGI(TAG, "Index Finger pressed");
+					} else if (button_state_index == BUTTON_HOLD) {
 
-						const char *message = "end";
-						send_buf(message, sizeof(message)-1);
-
-						const char *response = recv_buf();
-						if (strcmp(response, "Bye!")) {
+						if (conn_err == 1) {
+							ESP_LOGE(TAG, "Host socket closed");
 							goto exit_loop;
-						}	
-					}
+						} else if (init_mouse == 0 ) {
+							ESP_LOGE(TAG, "Initializing mouse");
+							const char *message = "mbegin";
+							send_buf(message, strlen(message));
+							init_mouse = 1;
+						}
+
+						getAccelData(&imu_buf_float[0], &imu_buf_float[1], &imu_buf_float[2]);
+						getRotData(&imu_buf_float[3], &imu_buf_float[4], &imu_buf_float[5]);
+						
+						if (conn_err == 1) {
+							ESP_LOGE(TAG, "Host socket closed");
+							goto exit_loop;
+						} else {
+							send_buf_udp(imu_buf_float, imu_buf_float_size);
+						}
+
+						if (end == 1){
+							goto exit_loop;
+
+							const char *message = "end";
+							send_buf(message, sizeof(message)-1);
+
+							const char *response = recv_buf();
+							if (strcmp(response, "Bye!")) {
+								goto exit_loop;
+							}	
+						}
+
+						ESP_LOGI(TAG, "Index Finger held");
+					}	
+					break;
+
 
 				default:
 					break;
 				}
 
 				fetch_flag = 0;
+				last_finger_state = finger;
 			}
 		}
 		exit_loop: ;
