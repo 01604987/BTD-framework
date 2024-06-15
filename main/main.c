@@ -331,6 +331,10 @@ void app_main(void)
 							goto exit_loop;
 						}	
 					}
+					if (conn_err == 1) {
+						ESP_LOGE(TAG, "Host socket closed");
+						goto exit_loop;
+					}
 
 					// deinit mouse
 					if (init_mouse == 1) {
