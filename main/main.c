@@ -170,9 +170,23 @@ void create_end_listener() {
 	}
 }
 
-void send_tap(){
+void send_i_tap(){
 	if (finger == NONE) {
 		const char *message = "itap";
+		send_buf(message, strlen(message));
+	}
+}
+
+void send_m_tap() {
+	if (finger == NONE) {
+		const char *message = "mtap";
+		send_buf(message, strlen(message));
+	}
+}
+
+void send_m_2tap() {
+	if (finger == NONE) {
+		const char *message = "m2tap";
 		send_buf(message, strlen(message));
 	}
 }
@@ -210,10 +224,16 @@ void app_main(void)
 	signal_timer = xTimerCreate("IMU-Signal", pdMS_TO_TICKS(10), pdTRUE, NULL, fetch_imu);
 
 	TimerHandle_t i_tap_timer;
-	i_tap_timer = xTimerCreate("Index-Timer", pdMS_TO_TICKS(300), pdFALSE, NULL, send_tap);
+	i_tap_timer = xTimerCreate("Index-Timer", pdMS_TO_TICKS(300), pdFALSE, NULL, send_i_tap);
 
 	TimerHandle_t i_double_tap_timer;
-	i_double_tap_timer = xTimerCreate("Index-Timer", pdMS_TO_TICKS(300), pdFALSE, NULL, send_tap);
+	i_double_tap_timer = xTimerCreate("Index-Timer", pdMS_TO_TICKS(300), pdFALSE, NULL, send_i_tap);
+
+	TimerHandle_t m_tap_timer;
+	m_tap_timer = xTimerCreate("Index-Timer", pdMS_TO_TICKS(300), pdFALSE, NULL, send_m_tap);
+
+	TimerHandle_t m_double_tap_timer;
+	m_double_tap_timer = xTimerCreate("Index-Timer", pdMS_TO_TICKS(300), pdFALSE, NULL, send_m_2tap);
 
 	while (1)
 	{
@@ -257,6 +277,8 @@ void app_main(void)
 		uint8_t steps = 0;
 		uint8_t feature = 0;
 		uint8_t init_mouse = 0;
+		uint8_t init_volume = 0;
+		uint8_t init_zoom = 0;
 		extern uint8_t conn_err;
 
 		// DEBUG
@@ -297,12 +319,38 @@ void app_main(void)
 				{
 				// TODO slide left right.
 				case NONE:
+
+					if (end == 1){
+						goto exit_loop;
+
+						const char *message = "end";
+						send_buf(message, sizeof(message)-1);
+
+						const char *response = recv_buf();
+						if (strcmp(response, "Bye!")) {
+							goto exit_loop;
+						}	
+					}
+
 					// deinit mouse
 					if (init_mouse == 1) {
 						const char *message = "mstop";
 						send_buf(message, strlen(message));
 						init_mouse = 0;
 					}
+					// deinit volume
+					if (init_volume == 1) {
+						const char *message = "vstop";
+						send_buf(message, strlen(message));
+						init_volume = 0;
+					}
+					// deinit zoom
+					if (init_zoom == 1) {
+						const char *message = "zstop";
+						send_buf(message, strlen(message));
+						init_zoom = 0;
+					}
+
 					// Add data to swipe buffer
 					swipe_buffer[swipe_index][0] = input_buf[0];
 					swipe_buffer[swipe_index][1] = input_buf[1];
@@ -349,23 +397,50 @@ void app_main(void)
 
 					break;
 
-				// TODO stream xz acceleration via udp
-				case DEV1:
-					if (button_state_index == BUTTON_PRESSED && last_finger_state != finger)
-					{
-						ESP_LOGI(TAG, "Index Finger pressed");
-					} else if (button_state_index == BUTTON_HOLD) {
-						ESP_LOGI(TAG, "Index Finger held");
-					}	
-					break;
 
 				// TODO originally for pressing esc and fullscreen. may be repurposed for activating left right slider.
 				case MIDDLE:
 					if (button_state_middle == BUTTON_PRESSED && last_finger_state != finger)
 					{
 						ESP_LOGI(TAG, "Middle Finger pressed");
+						
+						if (conn_err == 1) {
+							ESP_LOGE(TAG, "Host socket closed");
+							goto exit_loop;
+						} else {
+							if (xTimerStart(m_tap_timer, 0) != pdPASS) {
+									ESP_LOGE(TAG, "Middle Tap timer Start failure");
+								}
+						}
+
+						
 					} else if (button_state_middle == BUTTON_HOLD) {
 						ESP_LOGI(TAG, "Middle Finger held");
+
+						if (xTimerStop(m_tap_timer, 0) != pdPASS) {
+							ESP_LOGE(TAG, "Middle Tap timer stop failure");
+						}
+						
+
+						if (conn_err == 1) {
+							ESP_LOGE(TAG, "Host socket closed");
+							goto exit_loop;
+						} else if (init_volume == 0 ) {
+							ESP_LOGI(TAG, "Initializing volume");
+							const char *message = "vbegin";
+							send_buf(message, strlen(message));
+							init_volume = 1;
+						}
+
+						getAccelData(&imu_buf_float[0], &imu_buf_float[1], &imu_buf_float[2]);
+						getRotData(&imu_buf_float[3], &imu_buf_float[4], &imu_buf_float[5]);
+						
+						if (conn_err == 1) {
+							ESP_LOGE(TAG, "Host socket closed");
+							goto exit_loop;
+						} else {
+							send_buf_udp(imu_buf_float, imu_buf_float_size);
+						}
 					}	
                     break;
 
@@ -418,9 +493,51 @@ void app_main(void)
 				case DOUBLE_TAP_MIDDLE:
 					if (button_state_middle == BUTTON_DOUBLE_TAP && last_finger_state != finger) {
 						ESP_LOGI(TAG, "Middle Finger DOUBLE TAP");
+
+						if (conn_err == 1) {
+							ESP_LOGE(TAG, "Host socket closed");
+							goto exit_loop;
+						} else {
+							if (xTimerStop(m_tap_timer, 0) != pdPASS) {
+								ESP_LOGE(TAG, "Middle tap timer stop failure");
+							}
+							if (xTimerStart(m_double_tap_timer, 0) != pdPASS) {
+								ESP_LOGE(TAG, "Middle doubleTap timer Start failure");
+							}
+						}
+
+
 					} 
 					else if (button_state_middle == BUTTON_HOLD) {
 						ESP_LOGI(TAG, "Middle Finger TAP + HOLD");
+
+						if (xTimerStop(m_tap_timer, 0) != pdPASS) {
+								ESP_LOGE(TAG, "Middle tap timer stop failure");
+						}
+						if (xTimerStop(m_double_tap_timer, 0) != pdPASS) {
+								ESP_LOGE(TAG, "Middle doubleTap timer stop failure");
+						}
+
+						if (conn_err == 1) {
+							ESP_LOGE(TAG, "Host socket closed");
+							goto exit_loop;
+						} else if (init_zoom == 0) {
+							ESP_LOGI(TAG, "Init zoom");
+							const char *message = "zbegin";
+							send_buf(message, strlen(message));
+							init_zoom = 1; 
+						}
+
+						getAccelData(&imu_buf_float[0], &imu_buf_float[1], &imu_buf_float[2]);
+						getRotData(&imu_buf_float[3], &imu_buf_float[4], &imu_buf_float[5]);
+						
+						if (conn_err == 1) {
+							ESP_LOGE(TAG, "Host socket closed");
+							goto exit_loop;
+						} else {
+							send_buf_udp(imu_buf_float, imu_buf_float_size);
+						}
+
 					}		
 				
 				// for debugging purposes
