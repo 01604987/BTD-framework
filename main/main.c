@@ -196,6 +196,16 @@ extern volatile button_state_t button_state_middle;
 extern enum Switch finger;
 enum Switch last_finger_state = NONE;
 
+void smooth_data(float input_buf[3], float output_buf[3])
+{
+	static float previous_buf[3] = {0, 0, 0};
+	for (int i = 0; i < 3; i++)
+	{
+		output_buf[i] = (input_buf[i] + previous_buf[i]) / 2;
+		previous_buf[i] = input_buf[i];
+	}
+}
+
 void app_main(void)
 {
 	// Mount SPIFFS File System on FLASH
@@ -355,10 +365,14 @@ void app_main(void)
 						init_zoom = 0;
 					}
 
+					// Smooth data before adding to the buffer
+					float smoothed_buf[3];
+					smooth_data(input_buf, smoothed_buf);
+
 					// Add data to swipe buffer
-					swipe_buffer[swipe_index][0] = input_buf[0];
-					swipe_buffer[swipe_index][1] = input_buf[1];
-					swipe_buffer[swipe_index][2] = input_buf[2];
+					swipe_buffer[swipe_index][0] = smoothed_buf[0];
+					swipe_buffer[swipe_index][1] = smoothed_buf[1];
+					swipe_buffer[swipe_index][2] = smoothed_buf[2];
 					swipe_index = (swipe_index + 1) % SWIPE_BUFFER_SIZE;
 
 					// Detect swipe

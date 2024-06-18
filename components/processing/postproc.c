@@ -2,6 +2,8 @@
 #include <stdbool.h>
 #include <math.h>
 
+#define MIN_SWIPE_DURATION 5  // Minimum number of data points to consider a swipe valid
+
 
 int count_steps(float mag_array[], int size, float threshold) {
     int step_count = 0;
@@ -46,12 +48,15 @@ int detect_swipe(float accel_data[][3], int size, float threshold) {
 // Swipe detection function with direction
 swipe_direction_t detect_swipe(float accel_data[][3], int size, float threshold) {
     float delta_x_sum = 0;
+    int valid_points = 0;
+
     for (int i = 1; i < size; i++) {
         float delta_x = accel_data[i][0] - accel_data[i - 1][0];
         delta_x_sum += delta_x;
+        valid_points++;
 
-        // from left to right or vice verca
-        if (fabs(delta_x) > threshold) {
+        // Ensure a minimum swipe duration
+        if (valid_points >= MIN_SWIPE_DURATION && fabs(delta_x_sum) > threshold) {
             if (delta_x_sum > 0) {
                 return SWIPE_LEFT_TO_RIGHT;
             } else {
