@@ -224,16 +224,16 @@ void app_main(void)
 	signal_timer = xTimerCreate("IMU-Signal", pdMS_TO_TICKS(10), pdTRUE, NULL, fetch_imu);
 
 	TimerHandle_t i_tap_timer;
-	i_tap_timer = xTimerCreate("Index-Timer", pdMS_TO_TICKS(300), pdFALSE, NULL, send_i_tap);
+	i_tap_timer = xTimerCreate("Index-Timer", pdMS_TO_TICKS(200), pdFALSE, NULL, send_i_tap);
 
 	TimerHandle_t i_double_tap_timer;
-	i_double_tap_timer = xTimerCreate("Index-Timer", pdMS_TO_TICKS(300), pdFALSE, NULL, send_i_tap);
+	i_double_tap_timer = xTimerCreate("Index-Timer", pdMS_TO_TICKS(200), pdFALSE, NULL, send_i_tap);
 
 	TimerHandle_t m_tap_timer;
-	m_tap_timer = xTimerCreate("Index-Timer", pdMS_TO_TICKS(300), pdFALSE, NULL, send_m_tap);
+	m_tap_timer = xTimerCreate("Index-Timer", pdMS_TO_TICKS(200), pdFALSE, NULL, send_m_tap);
 
 	TimerHandle_t m_double_tap_timer;
-	m_double_tap_timer = xTimerCreate("Index-Timer", pdMS_TO_TICKS(300), pdFALSE, NULL, send_m_2tap);
+	m_double_tap_timer = xTimerCreate("Index-Timer", pdMS_TO_TICKS(200), pdFALSE, NULL, send_m_2tap);
 
 	while (1)
 	{
