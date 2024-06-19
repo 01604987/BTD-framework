@@ -3,7 +3,11 @@
 
 #include "driver/gpio.h"
 
+// test with device button middle
+//#define BUTTON_PIN_INDEX GPIO_NUM_37
 #define BUTTON_PIN_INDEX GPIO_NUM_25
+// test with device button right
+//#define BUTTON_PIN_MIDDLE GPIO_NUM_39
 #define BUTTON_PIN_MIDDLE GPIO_NUM_26
 
 #define DEBOUNCE_TIME_MS 20
