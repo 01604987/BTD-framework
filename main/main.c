@@ -317,8 +317,43 @@ void app_main(void)
 
 				switch (finger)
 				{
-				// TODO slide left right.
+
 				case NONE:
+				// VIDEO ONLY
+					if (conn_err == 1) {
+						ESP_LOGE(TAG, "Host socket closed");
+						goto exit_loop;
+					} else if (init_mouse == 0 ) {
+						ESP_LOGI(TAG, "Initializing mouse");
+						const char *message = "mbegin";
+						send_buf(message, strlen(message));
+						init_mouse = 1;
+					}
+
+					getAccelData(&imu_buf_float[0], &imu_buf_float[1], &imu_buf_float[2]);
+					getRotData(&imu_buf_float[3], &imu_buf_float[4], &imu_buf_float[5]);
+						
+					if (conn_err == 1) {
+						ESP_LOGE(TAG, "Host socket closed");
+						goto exit_loop;
+					} else {
+						send_buf_udp(imu_buf_float, imu_buf_float_size);
+					}
+
+					if (end == 1){
+						goto exit_loop;
+
+						const char *message = "end";
+						send_buf(message, sizeof(message)-1);
+
+						const char *response = recv_buf();
+						if (strcmp(response, "Bye!")) {
+							goto exit_loop;
+						}	
+					}
+					break;
+
+
 
 					if (end == 1){
 						goto exit_loop;

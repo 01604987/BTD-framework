@@ -82,7 +82,7 @@ void init_button() {
     io_conf_index.mode = GPIO_MODE_INPUT;
     io_conf_index.pin_bit_mask = (1ULL << BUTTON_PIN_INDEX);
     io_conf_index.pull_down_en = 0;
-    io_conf_index.pull_up_en = 0;
+    io_conf_index.pull_up_en = 1;
     gpio_config(&io_conf_index);
 
     gpio_config_t io_conf_middle;
@@ -90,7 +90,7 @@ void init_button() {
     io_conf_middle.mode = GPIO_MODE_INPUT;
     io_conf_middle.pin_bit_mask = (1ULL << BUTTON_PIN_MIDDLE);
     io_conf_middle.pull_down_en = 0;
-    io_conf_middle.pull_up_en = 0;
+    io_conf_middle.pull_up_en = 1;
     gpio_config(&io_conf_middle);
 
     gpio_install_isr_service(0);
