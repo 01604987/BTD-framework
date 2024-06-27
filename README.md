@@ -1,7 +1,7 @@
 # Smart Presenter Glove
-This repository contains client code for streaming, pre-/postprocessing, simple motionin detection with the IMU data from the M5 Stick C Plus. This client application was built for a handsfree, ubiquitous and wearable computing project, "Smart Presenter", which allows for intuitive gestures to control Mouse and Keyboard events. Workflow, process and ideation of this project can be found on this [Miro board](https://miro.com/app/board/uXjVKQi3msY=/?share_link_id=143508401314). Included are a complete set of presentations and their accompanying video recordings for Milestone 2/3 and a small image gallery.
+This repository contains client code for streaming, pre-/postprocessing, simple motion detection with the IMU data from the M5 Stick C Plus. This client application was built for a handsfree, ubiquitous and wearable computing project, "Smart Presenter", which allows for intuitive gestures to control Mouse and Keyboard events. Workflow, process and ideation of this project can be found on this [Miro board](https://miro.com/app/board/uXjVKQi3msY=/?share_link_id=143508401314). Included are a complete set of presentation slides and a small image gallery.
 
-The server code can be found [here](https://github.com/01604987/BTD-server?tab=readme-ov-file).
+The server code can be found [here](https://github.com/01604987/BTD-server).
 
 # Requirements
 
@@ -27,7 +27,7 @@ This client was developed on the esp-idf. Please make sure to use esp-idf versio
 For a guide on how to setup esp idf with visual studio code, please follow these [instructions](https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md).
 
 ## Server
-This client will only run with the correct setup of the acompanying [server found here](https://github.com/01604987/BTD-server). Please follow the instructions provided in the README.md of the server repository. 
+This client will only run with the correct setup of the accompanying [server found here](https://github.com/01604987/BTD-server). Please follow the instructions provided in the README.md of the server repository. 
 
 
 # How to install the Client
