@@ -88,6 +88,9 @@ void getRotAdc(int16_t* gx, int16_t* gy, int16_t* gz) {
     *gz = ((int16_t)buf[4] << 8) | buf[5];
 }
 
+// deviding raw data by factor of 131 to get degrees
+// source: http://www.geekmomprojects.com/gyroscopes-and-accelerometers-on-a-chip/
+// despite imu on M5 stick being mpu 6886 and referenced imu being 6050, value seems to be working great.  
 void getRotData(float* gx, float* gy, float* gz) {
     int16_t rotX = 0;
     int16_t rotY = 0;

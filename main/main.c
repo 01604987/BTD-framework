@@ -3,20 +3,12 @@
 #include <string.h>
 #include <inttypes.h>
 
-// #include "freertos/FreeRTOS.h" //
-// #include "freertos/task.h" //
-// #include "esp_err.h" //
-// #include "freertos/timers.h"
 #include "esp_log.h"
 #include "esp_vfs.h"
 #include "esp_spiffs.h"
 #include "driver/gpio.h"
 
 #include "sgm2578.h"
-// #include "bmpfile.h"
-// #include "decode_jpeg.h"
-// #include "decode_png.h"
-// #include "pngle.h"
 #include <math.h>
 #include "imu.h"
 #include "tft.h"
@@ -220,8 +212,12 @@ void app_main(void)
 	TimerHandle_t end_timer;
 	end_timer = xTimerCreate("EndTimer", pdMS_TO_TICKS(30000), pdFALSE, NULL, end_callback);
 
+	// using 100hz sampling frequency
 	TimerHandle_t signal_timer;
 	signal_timer = xTimerCreate("IMU-Signal", pdMS_TO_TICKS(10), pdTRUE, NULL, fetch_imu);
+
+
+	// using timers to fix eg.: buttons issuing tap + tap + hold despite only tap & holding
 
 	TimerHandle_t i_tap_timer;
 	i_tap_timer = xTimerCreate("Index-Timer", pdMS_TO_TICKS(200), pdFALSE, NULL, send_i_tap);
@@ -269,9 +265,11 @@ void app_main(void)
 		// ===================================================================
 		uint8_t output_index = 0;
 
-		// TODO put these 4 following vars into postproc
+		// DEPRECATED, taken from exercise 2. only used for testing
 		char *walking = "WALKING";
 		char *idle = "IDLE";
+
+
 		char *swiped = "SWIPED";
 
 		uint8_t steps = 0;
@@ -303,7 +301,7 @@ void app_main(void)
 		}
 
 		clear_screen();
-		draw_text("Device \nInitialized");
+		draw_text("Initialized");
 
 		float swipe_buffer[SWIPE_BUFFER_SIZE][3];
 		int swipe_index = 0;
@@ -317,7 +315,7 @@ void app_main(void)
 
 				switch (finger)
 				{
-				// TODO slide left right.
+				// controlling left/right swipe
 				case NONE:
 
 					if (end == 1){
@@ -396,14 +394,68 @@ void app_main(void)
 						draw_text(idle);
 					}
 
-					// need to keep track of dynamic alloc. mem block size
-					// send_buf(input_buf, 3 * sizeof(float));
-
 					break;
 
 
-				// TODO originally for pressing esc and fullscreen. may be repurposed for activating left right slider.
+				case INDEX:
+					// single tap = left mouse button
+					if (button_state_index == BUTTON_PRESSED && last_finger_state != finger)
+					{
+						ESP_LOGI(TAG, "Index Finger pressed");
+						if (conn_err == 1) {
+							ESP_LOGE(TAG, "Host socket closed");
+							goto exit_loop;
+						} else {
+							if (xTimerStart(i_tap_timer, 0) != pdPASS) {
+									ESP_LOGE(TAG, "Index Tap timer Start failure");
+								}
+						}
+					// single tap & hold = controlling cursor
+					} else if (button_state_index == BUTTON_HOLD) {
+						if (xTimerStop(i_tap_timer, 0) != pdPASS) {
+							ESP_LOGE(TAG, "Index Tap timer stop failure");
+						}
+						
+
+						if (conn_err == 1) {
+							ESP_LOGE(TAG, "Host socket closed");
+							goto exit_loop;
+						} else if (init_mouse == 0 ) {
+							ESP_LOGI(TAG, "Initializing mouse");
+							const char *message = "mbegin";
+							send_buf(message, strlen(message));
+							init_mouse = 1;
+						}
+
+						getAccelData(&imu_buf_float[0], &imu_buf_float[1], &imu_buf_float[2]);
+						getRotData(&imu_buf_float[3], &imu_buf_float[4], &imu_buf_float[5]);
+						
+						if (conn_err == 1) {
+							ESP_LOGE(TAG, "Host socket closed");
+							goto exit_loop;
+						} else {
+							send_buf_udp(imu_buf_float, imu_buf_float_size);
+						}
+
+						if (end == 1){
+							goto exit_loop;
+
+							const char *message = "end";
+							send_buf(message, sizeof(message)-1);
+
+							const char *response = recv_buf();
+							if (strcmp(response, "Bye!")) {
+								goto exit_loop;
+							}	
+						}
+
+						ESP_LOGI(TAG, "Index Finger held");
+					}	
+					break;
+
+
 				case MIDDLE:
+					// single tap = right mouse button
 					if (button_state_middle == BUTTON_PRESSED && last_finger_state != finger)
 					{
 						ESP_LOGI(TAG, "Middle Finger pressed");
@@ -417,7 +469,7 @@ void app_main(void)
 								}
 						}
 
-						
+					// tap & hold = controlling volume
 					} else if (button_state_middle == BUTTON_HOLD) {
 						ESP_LOGI(TAG, "Middle Finger held");
 
@@ -447,8 +499,9 @@ void app_main(void)
 						}
 					}	
                     break;
-
+				
 				case DOUBLE_TAP_INDEX:
+					// double tap = double click lmb
 					if (button_state_index == BUTTON_DOUBLE_TAP && last_finger_state != finger)
 					{
 						ESP_LOGI(TAG, "Index Finger DOUBLE TAP");
@@ -460,6 +513,8 @@ void app_main(void)
 								ESP_LOGE(TAG, "Index doubleTap timer Start failure");
 							}
 						}
+
+					// double tap & hold = drag & drop while controlling cursor
 					} else if (button_state_index == BUTTON_HOLD) {
 						if (xTimerStop(i_tap_timer, 0) != pdPASS) {
 								ESP_LOGE(TAG, "Index tap timer stop failure");
@@ -495,6 +550,7 @@ void app_main(void)
                     break;	
 
 				case DOUBLE_TAP_MIDDLE:
+					// double tap = exit/enter slide full screen (ctrl + L) for adobe pdf reader
 					if (button_state_middle == BUTTON_DOUBLE_TAP && last_finger_state != finger) {
 						ESP_LOGI(TAG, "Middle Finger DOUBLE TAP");
 
@@ -512,6 +568,7 @@ void app_main(void)
 
 
 					} 
+					// double tap & hold = controlling zoom
 					else if (button_state_middle == BUTTON_HOLD) {
 						ESP_LOGI(TAG, "Middle Finger TAP + HOLD");
 
@@ -543,12 +600,10 @@ void app_main(void)
 						}
 
 					}		
-				
-				// for debugging purposes
-				case DEBUG:
 					break;
 
-				// example step detection + raw imu streamer via tcp
+				// example step detection on device
+				// testing purposes only
 				case DEV0:
 					// sliding window
 					if (output_index >= WINDOW)
@@ -606,63 +661,7 @@ void app_main(void)
 							send_buf(input_buf, 3 * sizeof(float));
 						}
 					}
-
-				// send filtered data only
-				case INDEX:
-
-					if (button_state_index == BUTTON_PRESSED && last_finger_state != finger)
-					{
-						ESP_LOGI(TAG, "Index Finger pressed");
-						if (conn_err == 1) {
-							ESP_LOGE(TAG, "Host socket closed");
-							goto exit_loop;
-						} else {
-							if (xTimerStart(i_tap_timer, 0) != pdPASS) {
-									ESP_LOGE(TAG, "Index Tap timer Start failure");
-								}
-						}
-					} else if (button_state_index == BUTTON_HOLD) {
-						if (xTimerStop(i_tap_timer, 0) != pdPASS) {
-							ESP_LOGE(TAG, "Index Tap timer stop failure");
-						}
-						
-
-						if (conn_err == 1) {
-							ESP_LOGE(TAG, "Host socket closed");
-							goto exit_loop;
-						} else if (init_mouse == 0 ) {
-							ESP_LOGI(TAG, "Initializing mouse");
-							const char *message = "mbegin";
-							send_buf(message, strlen(message));
-							init_mouse = 1;
-						}
-
-						getAccelData(&imu_buf_float[0], &imu_buf_float[1], &imu_buf_float[2]);
-						getRotData(&imu_buf_float[3], &imu_buf_float[4], &imu_buf_float[5]);
-						
-						if (conn_err == 1) {
-							ESP_LOGE(TAG, "Host socket closed");
-							goto exit_loop;
-						} else {
-							send_buf_udp(imu_buf_float, imu_buf_float_size);
-						}
-
-						if (end == 1){
-							goto exit_loop;
-
-							const char *message = "end";
-							send_buf(message, sizeof(message)-1);
-
-							const char *response = recv_buf();
-							if (strcmp(response, "Bye!")) {
-								goto exit_loop;
-							}	
-						}
-
-						ESP_LOGI(TAG, "Index Finger held");
-					}	
 					break;
-
 
 				default:
 					break;
